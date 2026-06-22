@@ -85,7 +85,7 @@ export default function Dashboard() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                 <XAxis dataKey="date" fontSize={12} tickLine={false} />
                 <YAxis fontSize={12} tickLine={false} tickFormatter={v => `$${v}`} />
-                <Tooltip formatter={(v: number) => [`$${v.toLocaleString()}`, 'Revenue']} />
+                <Tooltip formatter={(v) => [`$${Number(v).toLocaleString()}`, 'Revenue']} />
                 <Area type="monotone" dataKey="revenue" stroke="#3B82F6" fill="url(#revenueGradient)" strokeWidth={2} />
               </AreaChart>
             </ResponsiveContainer>

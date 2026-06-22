@@ -20,7 +20,7 @@ export default function Schedule() {
 
   const techs = team.filter(t => t.role === 'technician');
 
-  const unscheduledJobs = jobs.filter(j => j.status === 'on_hold' && j.status !== 'cancelled');
+  const unscheduledJobs = jobs.filter(j => j.status === 'on_hold');
 
   const getJobsForDay = (date: string) =>
     jobs.filter(j => j.scheduledDate === date && j.status !== 'cancelled' && j.status !== 'on_hold');

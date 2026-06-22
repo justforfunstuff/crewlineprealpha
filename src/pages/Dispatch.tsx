@@ -21,7 +21,7 @@ export default function Dispatch() {
 
   const handleOptimize = () => {
     const reorderings: string[] = [];
-    routes.forEach(({ tech, jobs: routeJobs }) => {
+    routes.forEach(({ jobs: routeJobs }) => {
       if (routeJobs.length < 2) return;
       const sorted = [...routeJobs].sort((a, b) => {
         const latA = a.lat || 39.75; const latB = b.lat || 39.75;

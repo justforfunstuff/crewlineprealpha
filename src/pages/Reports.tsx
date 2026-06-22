@@ -1,7 +1,7 @@
 import { useApp } from '../context/AppContext';
 import { dailyStats } from '../data/mockData';
 import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { Download, TrendingUp, TrendingDown, DollarSign, Users, Briefcase, FileText } from 'lucide-react';
+import { Download, TrendingUp, TrendingDown, DollarSign, Briefcase, FileText } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { showToast } from '../components/Toast';
 
@@ -86,7 +86,7 @@ export default function Reports() {
       </div>
 
       <div className="reports-grid">
-        <div className="card chart-card span-2"><h3>Revenue Trend</h3><ResponsiveContainer width="100%" height={280}><AreaChart data={revenueData}><defs><linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3} /><stop offset="95%" stopColor="#3B82F6" stopOpacity={0} /></linearGradient></defs><CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" /><XAxis dataKey="date" fontSize={12} /><YAxis fontSize={12} tickFormatter={v => `$${v}`} /><Tooltip formatter={(v: number) => `$${v.toLocaleString()}`} /><Area type="monotone" dataKey="revenue" stroke="#3B82F6" fill="url(#revGrad)" strokeWidth={2} /></AreaChart></ResponsiveContainer></div>
+        <div className="card chart-card span-2"><h3>Revenue Trend</h3><ResponsiveContainer width="100%" height={280}><AreaChart data={revenueData}><defs><linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3} /><stop offset="95%" stopColor="#3B82F6" stopOpacity={0} /></linearGradient></defs><CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" /><XAxis dataKey="date" fontSize={12} /><YAxis fontSize={12} tickFormatter={v => `$${v}`} /><Tooltip formatter={(v) => `$${Number(v).toLocaleString()}`} /><Area type="monotone" dataKey="revenue" stroke="#3B82F6" fill="url(#revGrad)" strokeWidth={2} /></AreaChart></ResponsiveContainer></div>
         <div className="card chart-card"><h3>Job Status</h3><ResponsiveContainer width="100%" height={280}><PieChart><Pie data={jobStatusData} cx="50%" cy="50%" outerRadius={90} dataKey="value" label={({ name, value }) => `${name}: ${value}`}>{jobStatusData.map((_, i) => <Cell key={i} fill={COLORS[i]} />)}</Pie><Tooltip /></PieChart></ResponsiveContainer></div>
         <div className="card chart-card"><h3>Technician Performance</h3><ResponsiveContainer width="100%" height={280}><BarChart data={techPerformance}><CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" /><XAxis dataKey="name" fontSize={12} /><YAxis fontSize={12} /><Tooltip /><Legend /><Bar dataKey="completed" fill="#10B981" name="Completed" radius={[4, 4, 0, 0]} /><Bar dataKey="jobs" fill="#3B82F6" name="Total" radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer></div>
         <div className="card chart-card"><h3>Invoice Status</h3><ResponsiveContainer width="100%" height={280}><PieChart><Pie data={invoiceStatusData} cx="50%" cy="50%" innerRadius={50} outerRadius={90} dataKey="value" label>{invoiceStatusData.map((_, i) => <Cell key={i} fill={COLORS[i]} />)}</Pie><Tooltip /><Legend /></PieChart></ResponsiveContainer></div>
