@@ -1,11 +1,10 @@
 import { useApp } from '../context/AppContext';
-import { dailyStats } from '../data/mockData';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { DollarSign, Briefcase, Users, FileText, TrendingUp, Clock, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 
 export default function Dashboard() {
-  const { jobs, customers, invoices, estimates, messages, team } = useApp();
+  const { jobs, customers, invoices, estimates, messages, team, dailyStats } = useApp();
 
   const todayJobs = jobs.filter(j => j.scheduledDate === '2026-06-21');
   const activeJobs = jobs.filter(j => j.status === 'in_progress');

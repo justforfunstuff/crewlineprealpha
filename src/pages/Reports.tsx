@@ -1,5 +1,4 @@
 import { useApp } from '../context/AppContext';
-import { dailyStats } from '../data/mockData';
 import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Download, TrendingUp, TrendingDown, DollarSign, Briefcase, FileText } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
@@ -8,7 +7,7 @@ import { showToast } from '../components/Toast';
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
 
 export default function Reports() {
-  const { jobs, customers, invoices, estimates, team } = useApp();
+  const { jobs, customers, invoices, estimates, team, dailyStats } = useApp();
 
   const revenueData = dailyStats.map(d => ({ date: format(parseISO(d.date), 'MMM d'), revenue: d.revenue, jobs: d.jobsCompleted, customers: d.newCustomers }));
   const jobStatusData = [

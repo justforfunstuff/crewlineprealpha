@@ -1,3 +1,48 @@
+// ========== Auth & Multi-Tenancy ==========
+
+export type UserRole = 'crewline_admin' | 'business_owner' | 'business_member';
+export type TeamRole = 'admin' | 'dispatcher' | 'technician';
+export type TenantPlan = 'free' | 'pro' | 'enterprise';
+export type TenantStatus = 'active' | 'suspended' | 'trial';
+
+export interface Tenant {
+  id: string;
+  name: string;
+  slug: string;
+  owner_id: string;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+  city: string | null;
+  state: string | null;
+  zip: string | null;
+  logo_url: string | null;
+  plan: TenantPlan;
+  status: TenantStatus;
+  trial_ends_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Profile {
+  id: string;
+  tenant_id: string | null;
+  email: string;
+  full_name: string;
+  phone: string | null;
+  avatar_url: string | null;
+  role: UserRole;
+  team_role: TeamRole;
+  color: string;
+  skills: string[];
+  availability: WeeklyAvailability;
+  status: 'available' | 'on_job' | 'break' | 'off_duty';
+  created_at: string;
+  updated_at: string;
+}
+
+// ========== Business Data ==========
+
 export interface Customer {
   id: string;
   firstName: string;

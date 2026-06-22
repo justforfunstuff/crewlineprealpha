@@ -1,31 +1,40 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Search, Menu, X, Briefcase, Users, FileText, Receipt, MessageSquare } from 'lucide-react';
+import { Bell, Search, Menu, X, Briefcase, Users, FileText, Receipt, MessageSquare, LogOut, Shield } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { useAuth } from '../../context/AuthContext';
 
 export default function TopBar({ onMenuClick }: { onMenuClick: () => void }) {
-  const { messages, jobs, customers, invoices, estimates } = useApp();
+  const { messages, jobs, invoices, estimates } = useApp();
+  const { profile, tenant, isAdmin, signOut } = useAuth();
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [showResults, setShowResults] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
+  const userRef = useRef<HTMLDivElement>(null);
 
   const unreadCount = messages.filter(m => !m.read && m.direction === 'inbound').length;
   const overdueCount = invoices.filter(i => i.status === 'overdue').length;
   const pendingEstimates = estimates.filter(e => e.status === 'sent' || e.status === 'viewed').length;
   const totalAlerts = unreadCount + overdueCount;
 
+  const displayName = profile?.full_name || 'User';
+  const initials = displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) setShowResults(false);
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) setShowNotifications(false);
+      if (userRef.current && !userRef.current.contains(e.target as Node)) setShowUserMenu(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  const { customers } = useApp();
   const q = query.toLowerCase().trim();
   const results = q.length < 2 ? [] : [
     ...customers.filter(c => `${c.firstName} ${c.lastName} ${c.email} ${c.phone}`.toLowerCase().includes(q)).slice(0, 3).map(c => ({ type: 'customer' as const, id: c.id, label: `${c.firstName} ${c.lastName}`, sub: c.phone, icon: Users })),
@@ -47,9 +56,17 @@ export default function TopBar({ onMenuClick }: { onMenuClick: () => void }) {
     { icon: Briefcase, text: `${jobs.filter(j => j.status === 'in_progress').length} jobs in progress today`, action: '/jobs', color: 'var(--warning)' },
   ];
 
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/login');
+  };
+
   return (
     <header className="topbar">
       <button className="topbar-menu-btn" onClick={onMenuClick}><Menu size={20} /></button>
+
+      {tenant && <span className="tenant-name">{tenant.name}</span>}
+
       <div className="topbar-search" ref={searchRef}>
         <Search size={16} className="search-icon" />
         <input type="text" placeholder="Search jobs, customers, invoices..." value={query} onChange={e => { setQuery(e.target.value); setShowResults(true); }} onFocus={() => setShowResults(true)} />
@@ -69,6 +86,7 @@ export default function TopBar({ onMenuClick }: { onMenuClick: () => void }) {
           <div className="search-results"><div className="search-empty">No results found</div></div>
         )}
       </div>
+
       <div className="topbar-actions">
         <div className="notification-wrapper" ref={notifRef}>
           <button className="topbar-btn notification-btn" onClick={() => setShowNotifications(!showNotifications)}>
@@ -87,9 +105,30 @@ export default function TopBar({ onMenuClick }: { onMenuClick: () => void }) {
             </div>
           )}
         </div>
-        <div className="topbar-user">
-          <div className="user-avatar">LP</div>
-          <span className="user-name">Lakin B.</span>
+
+        <div className="user-menu-wrapper" ref={userRef}>
+          <button className="topbar-user" onClick={() => setShowUserMenu(!showUserMenu)}>
+            <div className="user-avatar">{initials}</div>
+            <span className="user-name">{displayName}</span>
+          </button>
+          {showUserMenu && (
+            <div className="notification-dropdown user-dropdown">
+              <div className="notif-header">
+                <strong>{displayName}</strong>
+                <span style={{ fontSize: 11, color: 'var(--text-light)', display: 'block' }}>{profile?.email}</span>
+              </div>
+              {isAdmin && (
+                <button className="notif-item" onClick={() => { navigate('/admin'); setShowUserMenu(false); }}>
+                  <Shield size={16} style={{ color: 'var(--purple)' }} />
+                  <span>Admin Portal</span>
+                </button>
+              )}
+              <button className="notif-item" onClick={handleSignOut}>
+                <LogOut size={16} style={{ color: 'var(--danger)' }} />
+                <span>Sign Out</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </header>
