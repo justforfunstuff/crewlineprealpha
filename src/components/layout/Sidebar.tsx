@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Calendar, Users, Briefcase, FileText, Receipt, Map, UserCog, MessageSquare, Globe, BarChart3, Zap } from 'lucide-react';
+import { LayoutDashboard, Calendar, Users, Briefcase, FileText, Receipt, Map, UserCog, MessageSquare, Globe, BarChart3, Zap, CreditCard, Settings } from 'lucide-react';
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
@@ -8,11 +8,13 @@ const navItems = [
   { to: '/customers', icon: Users, label: 'Customers' },
   { to: '/estimates', icon: FileText, label: 'Estimates' },
   { to: '/invoices', icon: Receipt, label: 'Invoices' },
+  { to: '/payments', icon: CreditCard, label: 'Payments' },
   { to: '/dispatch', icon: Map, label: 'Dispatch' },
   { to: '/team', icon: UserCog, label: 'Team' },
   { to: '/messages', icon: MessageSquare, label: 'Messages' },
   { to: '/booking', icon: Globe, label: 'Booking' },
   { to: '/reports', icon: BarChart3, label: 'Reports' },
+  { to: '/settings', icon: Settings, label: 'Settings' },
 ];
 
 export default function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {

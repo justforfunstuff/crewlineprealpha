@@ -21,22 +21,29 @@ import Team from './pages/Team';
 import Messages from './pages/Messages';
 import Booking from './pages/Booking';
 import Reports from './pages/Reports';
+import Pricing from './pages/Pricing';
+import Settings from './pages/Settings';
+import PaymentHistory from './pages/PaymentHistory';
+import InvoicePayment from './pages/InvoicePayment';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminBusinesses from './pages/admin/AdminBusinesses';
 import AdminBusinessDetail from './pages/admin/AdminBusinessDetail';
 import AdminCreateBusiness from './pages/admin/AdminCreateBusiness';
 import AdminUsers from './pages/admin/AdminUsers';
+import AdminRevenue from './pages/admin/AdminRevenue';
 
 export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* Public auth routes */}
+          {/* Public routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/pay/:invoiceId" element={<InvoicePayment />} />
 
           {/* Authenticated routes */}
           <Route element={<RequireAuth />}>
@@ -54,6 +61,8 @@ export default function App() {
                 <Route path="/messages" element={<Messages />} />
                 <Route path="/booking" element={<Booking />} />
                 <Route path="/reports" element={<Reports />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/payments" element={<PaymentHistory />} />
               </Route>
             </Route>
 
@@ -65,6 +74,7 @@ export default function App() {
                 <Route path="businesses/new" element={<AdminCreateBusiness />} />
                 <Route path="businesses/:id" element={<AdminBusinessDetail />} />
                 <Route path="users" element={<AdminUsers />} />
+                <Route path="revenue" element={<AdminRevenue />} />
               </Route>
             </Route>
           </Route>

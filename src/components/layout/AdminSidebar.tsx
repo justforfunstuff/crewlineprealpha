@@ -1,10 +1,11 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Building2, Users, Zap, Shield } from 'lucide-react';
+import { LayoutDashboard, Building2, Users, Zap, Shield, DollarSign } from 'lucide-react';
 
 const navItems = [
   { to: '/admin', icon: LayoutDashboard, label: 'Dashboard', end: true },
   { to: '/admin/businesses', icon: Building2, label: 'Businesses' },
   { to: '/admin/users', icon: Users, label: 'Users' },
+  { to: '/admin/revenue', icon: DollarSign, label: 'Revenue' },
 ];
 
 export default function AdminSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {

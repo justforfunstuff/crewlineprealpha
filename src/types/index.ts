@@ -4,6 +4,8 @@ export type UserRole = 'crewline_admin' | 'business_owner' | 'business_member';
 export type TeamRole = 'admin' | 'dispatcher' | 'technician';
 export type TenantPlan = 'free' | 'pro' | 'enterprise';
 export type TenantStatus = 'active' | 'suspended' | 'trial';
+export type SubscriptionPlan = 'monthly' | 'yearly' | 'annual_upfront';
+export type SubscriptionStatus = 'none' | 'trialing' | 'active' | 'past_due' | 'cancelled';
 
 export interface Tenant {
   id: string;
@@ -20,6 +22,14 @@ export interface Tenant {
   plan: TenantPlan;
   status: TenantStatus;
   trial_ends_at: string | null;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  stripe_connect_account_id: string | null;
+  stripe_connect_onboarded: boolean;
+  subscription_status: SubscriptionStatus;
+  subscription_plan: SubscriptionPlan | null;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -191,4 +201,26 @@ export interface DailyStats {
   jobsCompleted: number;
   newCustomers: number;
   estimatesSent: number;
+}
+
+// ========== Payments ==========
+
+export type PaymentStatus = 'pending' | 'succeeded' | 'failed' | 'refunded';
+
+export interface Payment {
+  id: string;
+  tenant_id: string;
+  invoice_id: string | null;
+  stripe_payment_intent_id: string;
+  amount: number;
+  processing_fee: number;
+  platform_fee: number;
+  net_amount: number;
+  currency: string;
+  payment_method_type: 'card' | 'us_bank_account';
+  status: PaymentStatus;
+  customer_email: string | null;
+  customer_name: string | null;
+  created_at: string;
+  completed_at: string | null;
 }

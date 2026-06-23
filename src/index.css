@@ -714,3 +714,85 @@ body { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 14
 .topbar-user { display: flex; align-items: center; gap: 8px; cursor: pointer; border: none; background: none; padding: 4px; border-radius: 6px; }
 .topbar-user:hover { background: var(--border-light); }
 .user-dropdown { right: 0; min-width: 220px; }
+
+/* ========== PRICING PAGE ========== */
+.pricing-page { min-height: 100vh; padding: 60px 20px; background: var(--bg); }
+.pricing-header { text-align: center; margin-bottom: 48px; }
+.pricing-header h2 { font-size: 32px; font-weight: 700; color: var(--text-dark); margin: 16px 0 8px; }
+.pricing-header p { color: var(--text-light); font-size: 16px; }
+.pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; max-width: 960px; margin: 0 auto; }
+.pricing-card { background: var(--bg-card); border: 2px solid var(--border); border-radius: var(--radius-lg); padding: 32px; position: relative; transition: all var(--transition); }
+.pricing-card:hover { border-color: var(--primary); box-shadow: var(--shadow-md); }
+.pricing-card.featured { border-color: var(--primary); box-shadow: 0 8px 30px rgba(59,130,246,0.15); }
+.pricing-card.current { border-color: var(--success); }
+.pricing-badge { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--primary); color: #fff; font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 99px; }
+.pricing-savings { font-size: 12px; font-weight: 600; color: var(--success); margin-bottom: 8px; }
+.pricing-card h3 { font-size: 18px; font-weight: 600; margin: 0 0 12px; color: var(--text-dark); }
+.pricing-price { display: flex; align-items: baseline; gap: 2px; margin-bottom: 4px; }
+.price-amount { font-size: 42px; font-weight: 700; color: var(--text-dark); }
+.price-interval { font-size: 16px; color: var(--text-light); }
+.price-annual { font-size: 12px; color: var(--text-light); margin: 0 0 4px; }
+.price-commitment { font-size: 13px; color: var(--text-light); margin: 0 0 20px; }
+.pricing-cta { width: 100%; justify-content: center; margin-bottom: 24px; }
+.pricing-features { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.pricing-features li { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text); }
+.pricing-features li svg { color: var(--success); flex-shrink: 0; }
+.pricing-footer { max-width: 960px; margin: 40px auto 0; text-align: center; }
+.pricing-trust { display: flex; justify-content: center; gap: 24px; margin-bottom: 16px; }
+.trust-item { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-light); }
+.pricing-fee-note { font-size: 13px; color: var(--text-light); max-width: 600px; margin: 0 auto; }
+.pricing-login-note { text-align: center; margin-top: 24px; font-size: 13px; color: var(--text-light); }
+
+/* ========== SETTINGS PAGE ========== */
+.settings-page .settings-grid { display: flex; flex-direction: column; gap: 20px; }
+.settings-section h3 { display: flex; align-items: center; gap: 8px; font-size: 16px; }
+.subscription-info { display: flex; flex-direction: column; gap: 10px; }
+.sub-detail { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border-light); font-size: 13px; }
+.sub-label { color: var(--text-light); }
+.sub-value { font-weight: 600; color: var(--text-dark); }
+.fee-transparency { display: flex; flex-direction: column; gap: 16px; }
+.fee-disclosure-card { padding: 16px; background: var(--bg); border-radius: var(--radius); }
+.fee-disclosure-card h4 { font-size: 13px; font-weight: 600; color: var(--text-dark); margin-bottom: 8px; }
+.fee-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.fee-table th { text-align: left; padding: 6px 8px; font-size: 11px; color: var(--text-light); text-transform: uppercase; border-bottom: 1px solid var(--border); }
+.fee-table td { padding: 6px 8px; border-bottom: 1px solid var(--border-light); }
+.fee-note { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-light); margin-bottom: 8px; }
+.fee-example { font-size: 12px; color: var(--text-light); margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border-light); }
+
+/* ========== FEE BREAKDOWN ========== */
+.fee-breakdown { padding: 12px; background: var(--bg); border-radius: var(--radius); font-size: 13px; }
+.fee-row { display: flex; justify-content: space-between; padding: 4px 0; }
+.fee-deduction { color: var(--text-light); }
+.fee-total { font-weight: 700; color: var(--text-dark); border-top: 2px solid var(--border); padding-top: 8px; margin-top: 4px; }
+
+/* ========== STRIPE CONNECT ========== */
+.connect-status-card { padding: 16px; background: var(--bg); border-radius: var(--radius); }
+.connect-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.connect-header h4 { margin: 0; font-size: 14px; color: var(--text-dark); }
+.connect-body { display: flex; flex-direction: column; gap: 12px; }
+.connect-status-row { display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 8px 12px; border-radius: var(--radius); }
+.connect-status-row.success { background: var(--success-light); color: #047857; }
+.connect-status-row.warning { background: var(--warning-light); color: #92400E; }
+.connect-description { font-size: 13px; color: var(--text); margin: 0; }
+.connect-fee-disclosure { font-size: 12px; color: var(--text-light); padding: 10px; background: var(--border-light); border-radius: var(--radius); }
+.connect-fee-disclosure ul { margin: 4px 0 0 16px; }
+.connect-fee-disclosure li { margin: 2px 0; }
+
+/* ========== SUBSCRIPTION BANNER ========== */
+.subscription-banner { display: flex; align-items: center; gap: 10px; padding: 10px 16px; font-size: 13px; border-radius: var(--radius); margin-bottom: 16px; }
+.banner-info { background: var(--primary-light); color: var(--primary-dark); }
+.banner-warning { background: var(--warning-light); color: #92400E; }
+.banner-danger { background: var(--danger-light); color: var(--danger); }
+.subscription-banner span { flex: 1; }
+
+/* ========== INVOICE PAYMENT PAGE ========== */
+.invoice-pay-card { background: var(--bg-card); border-radius: var(--radius-lg); padding: 32px; width: 560px; max-width: 100%; box-shadow: var(--shadow-md); }
+.invoice-pay-header { text-align: center; margin-bottom: 24px; }
+.invoice-pay-header h2 { font-size: 20px; margin: 8px 0 0; }
+.invoice-pay-customer { font-size: 13px; color: var(--text-light); margin-bottom: 16px; }
+.invoice-paid-state { text-align: center; padding: 32px 0; }
+.invoice-paid-state h3 { margin: 12px 0 4px; }
+.invoice-paid-state p { color: var(--text-light); }
+
+/* ========== RESPONSIVE PRICING ========== */
+@media (max-width: 768px) { .pricing-grid { grid-template-columns: 1fr; max-width: 400px; } }
