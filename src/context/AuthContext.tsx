@@ -12,7 +12,7 @@ interface AuthState {
   isAdmin: boolean;
   isOwner: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string, fullName: string, businessName: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, fullName: string, businessName: string) => Promise<{ error: Error | null; needsConfirmation?: boolean }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -34,12 +34,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .single();
 
     if (prof) {
-      setProfile(prof as Profile);
-      if (prof.tenant_id) {
+      let profileData = prof as Profile;
+
+      if (!profileData.tenant_id && profileData.role === 'business_owner') {
+        const { data: userData } = await supabase.auth.getUser();
+        const meta = userData?.user?.user_metadata;
+        if (meta?.business_name && meta?.business_slug) {
+          const { data: tenantData } = await supabase
+            .from('tenants')
+            .insert({ name: meta.business_name, slug: meta.business_slug, owner_id: userId, email: profileData.email })
+            .select()
+            .single();
+
+          if (tenantData) {
+            await supabase.from('profiles').update({ tenant_id: tenantData.id }).eq('id', userId);
+            profileData = { ...profileData, tenant_id: tenantData.id };
+            setTenant(tenantData as Tenant);
+          }
+        }
+      }
+
+      setProfile(profileData);
+      if (profileData.tenant_id && !tenant) {
         const { data: ten } = await supabase
           .from('tenants')
           .select('*')
-          .eq('id', prof.tenant_id)
+          .eq('id', profileData.tenant_id)
           .single();
         if (ten) setTenant(ten as Tenant);
       }
@@ -81,30 +101,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signUp = async (email: string, password: string, fullName: string, businessName: string) => {
+    const slug = businessName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: fullName, role: 'business_owner' } },
+      options: { data: { full_name: fullName, role: 'business_owner', business_name: businessName, business_slug: slug } },
     });
 
-    if (error || !data.user) return { error: (error as Error | null) || new Error('Signup failed') };
+    if (error) return { error: error as Error };
+    if (!data.user) return { error: new Error('Signup failed. Please try again.') };
 
-    const slug = businessName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    if (data.session) {
+      const { data: tenantData, error: tenantError } = await supabase
+        .from('tenants')
+        .insert({ name: businessName, slug, owner_id: data.user.id, email })
+        .select()
+        .single();
 
-    const { data: tenantData, error: tenantError } = await supabase
-      .from('tenants')
-      .insert({ name: businessName, slug, owner_id: data.user.id, email })
-      .select()
-      .single();
+      if (tenantError) return { error: new Error(`Account created, but business setup failed: ${tenantError.message}. Please contact support.`) };
 
-    if (tenantError) return { error: tenantError as unknown as Error };
+      await supabase
+        .from('profiles')
+        .update({ tenant_id: tenantData.id })
+        .eq('id', data.user.id);
+    }
 
-    await supabase
-      .from('profiles')
-      .update({ tenant_id: tenantData.id })
-      .eq('id', data.user.id);
-
-    return { error: null };
+    return { error: null, needsConfirmation: !data.session };
   };
 
   const signOut = async () => {

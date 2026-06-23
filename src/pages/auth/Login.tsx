@@ -23,7 +23,10 @@ export default function Login() {
 
     const { error: err } = await signIn(email, password);
     if (err) {
-      setError(err.message);
+      const msg = err.message.toLowerCase().includes('email not confirmed')
+        ? 'Email confirmation needed before signing in. Please check your inbox for the confirmation link.'
+        : err.message;
+      setError(msg);
       setLoading(false);
     }
   };

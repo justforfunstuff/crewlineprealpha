@@ -24,13 +24,15 @@ export default function Signup() {
     setError('');
     setLoading(true);
 
-    const { error: err } = await signUp(email, password, fullName, businessName);
-    if (err) {
-      setError(err.message);
+    const result = await signUp(email, password, fullName, businessName);
+    if (result.error) {
+      setError(result.error.message);
       setLoading(false);
-    } else {
+    } else if (result.needsConfirmation) {
       setSuccess(true);
       setLoading(false);
+    } else {
+      navigate('/');
     }
   };
 
@@ -42,9 +44,9 @@ export default function Signup() {
             <Zap size={32} />
             <h1>Crewline</h1>
           </div>
-          <h2>Check your email</h2>
-          <p className="auth-subtitle">We've sent a confirmation link to <strong>{email}</strong>. Click it to activate your account.</p>
-          <Link to="/login" className="btn btn-primary btn-lg auth-submit">Go to Login</Link>
+          <h2>Email confirmation needed</h2>
+          <p className="auth-subtitle">We've sent a confirmation link to <strong>{email}</strong>. Please check your inbox and click the link to activate your account, then sign in.</p>
+          <Link to="/login" className="btn btn-primary btn-lg auth-submit">Go to Sign In</Link>
         </div>
       </div>
     );
