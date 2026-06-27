@@ -152,7 +152,7 @@ export interface TeamMember {
   name: string;
   email: string;
   phone: string;
-  role: 'admin' | 'dispatcher' | 'technician';
+  role: 'admin' | 'dispatcher' | 'technician' | 'apprentice' | 'foreman' | 'estimator' | 'office';
   avatar: string;
   color: string;
   skills: string[];

@@ -7,7 +7,7 @@ import type { TeamMember, WeeklyAvailability } from '../types';
 
 const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316'];
-const SKILL_OPTIONS = ['plumbing', 'HVAC', 'electrical', 'drain-cleaning', 'lighting', 'panel-upgrades', 'refrigeration', 'ductwork', 'remodeling', 'general'];
+const SKILL_OPTIONS = ['plumbing', 'HVAC', 'electrical', 'drain-cleaning', 'lighting', 'panel-upgrades', 'refrigeration', 'ductwork', 'remodeling', 'general', 'carpentry', 'painting', 'roofing', 'landscaping', 'appliance-repair', 'fire-safety', 'insulation', 'concrete', 'welding', 'gas-fitting'];
 
 const defaultAvail: WeeklyAvailability = { monday: { start: '08:00', end: '17:00' }, tuesday: { start: '08:00', end: '17:00' }, wednesday: { start: '08:00', end: '17:00' }, thursday: { start: '08:00', end: '17:00' }, friday: { start: '08:00', end: '17:00' }, saturday: null, sunday: null };
 
@@ -23,7 +23,9 @@ export default function Team() {
   const completedJobs = memberJobs.filter(j => j.status === 'completed');
   const totalRevenue = completedJobs.reduce((s, j) => s + j.totalAmount, 0);
 
+  const [customSkill, setCustomSkill] = useState('');
   const toggleSkill = (skill: string) => setForm(p => ({ ...p, skills: p.skills.includes(skill) ? p.skills.filter(s => s !== skill) : [...p.skills, skill] }));
+  const addCustomSkill = () => { if (customSkill.trim() && !form.skills.includes(customSkill.trim())) { setForm(p => ({ ...p, skills: [...p.skills, customSkill.trim()] })); setCustomSkill(''); } };
   const toggleDay = (day: typeof DAYS[number]) => setForm(p => ({ ...p, availability: { ...p.availability, [day]: p.availability[day] ? null : { start: '08:00', end: '17:00' } } }));
   const updateDayTime = (day: typeof DAYS[number], field: 'start' | 'end', value: string) => setForm(p => ({ ...p, availability: { ...p.availability, [day]: p.availability[day] ? { ...p.availability[day]!, [field]: value } : null } }));
 
@@ -131,7 +133,7 @@ export default function Team() {
         <div className="form-grid">
           <div className="form-group"><label>Full Name *</label><input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="Jane Doe" /></div>
           <div className="form-group"><label>Role</label>
-            <select value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value as TeamMember['role'] }))}><option value="technician">Technician</option><option value="dispatcher">Dispatcher</option><option value="admin">Admin</option></select>
+            <select value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value as TeamMember['role'] }))}><option value="technician">Technician</option><option value="dispatcher">Dispatcher</option><option value="admin">Admin</option><option value="apprentice">Apprentice</option><option value="foreman">Foreman</option><option value="estimator">Estimator</option><option value="office">Office Staff</option></select>
           </div>
           <div className="form-group"><label>Email</label><input type="email" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} /></div>
           <div className="form-group"><label>Phone</label><input type="tel" value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} /></div>
@@ -139,7 +141,14 @@ export default function Team() {
             <div className="color-picker">{COLORS.map(c => <button key={c} type="button" className={`color-swatch ${form.color === c ? 'active' : ''}`} style={{ backgroundColor: c }} onClick={() => setForm(p => ({ ...p, color: c }))} />)}</div>
           </div>
           <div className="form-group full-width"><label>Skills</label>
-            <div className="tech-picker">{SKILL_OPTIONS.map(s => <button key={s} type="button" className={`tech-chip ${form.skills.includes(s) ? 'active' : ''}`} onClick={() => toggleSkill(s)}>{s}</button>)}</div>
+            <div className="tech-picker">
+              {SKILL_OPTIONS.map(s => <button key={s} type="button" className={`tech-chip ${form.skills.includes(s) ? 'active' : ''}`} onClick={() => toggleSkill(s)}>{s}</button>)}
+              {form.skills.filter(s => !SKILL_OPTIONS.includes(s)).map(s => <button key={s} type="button" className="tech-chip active" onClick={() => toggleSkill(s)}>{s}</button>)}
+            </div>
+            <div className="tag-input-row" style={{ marginTop: 6 }}>
+              <input value={customSkill} onChange={e => setCustomSkill(e.target.value)} placeholder="Add custom skill..." onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addCustomSkill())} />
+              <button className="btn btn-sm" type="button" onClick={addCustomSkill}>Add</button>
+            </div>
           </div>
           <div className="form-group full-width"><label>Availability</label>
             <div className="availability-editor">{DAYS.map(day => (

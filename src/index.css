@@ -796,3 +796,37 @@ body { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 14
 
 /* ========== RESPONSIVE PRICING ========== */
 @media (max-width: 768px) { .pricing-grid { grid-template-columns: 1fr; max-width: 400px; } }
+
+/* ========== DASHBOARD ENHANCEMENTS ========== */
+.kpi-card.draggable { position: relative; cursor: pointer; transition: all var(--transition); }
+.kpi-card.draggable:hover { box-shadow: var(--shadow-md); }
+.kpi-card.dragging { opacity: 0.5; }
+.kpi-drag-handle { position: absolute; top: 8px; left: 8px; color: var(--text-light); opacity: 0; cursor: grab; }
+.kpi-card:hover .kpi-drag-handle { opacity: 0.5; }
+.kpi-add-btn { position: absolute; top: 8px; right: 8px; background: none; border: 1px solid var(--border); border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-light); opacity: 0; transition: all var(--transition); }
+.kpi-card:hover .kpi-add-btn { opacity: 1; }
+.kpi-add-btn:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+.card-header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.card-header-row h3 { margin: 0; }
+.clickable { cursor: pointer; }
+.clickable:hover { background: var(--border-light); }
+
+/* ========== SCHEDULE SIDEBAR TOGGLE ========== */
+.schedule-sidebar.closed { display: none; }
+.schedule-sidebar.open { display: block; }
+
+/* ========== JOB NOTES ========== */
+.job-notes-display { font-family: inherit; font-size: 13px; white-space: pre-wrap; background: var(--bg); padding: 10px 12px; border-radius: var(--radius); color: var(--text); border: none; margin: 0; }
+
+/* ========== OPTIMIZE OPTIONS ========== */
+.optimize-options { display: flex; flex-direction: column; gap: 8px; }
+.optimize-option { display: flex; align-items: flex-start; gap: 10px; padding: 12px; border: 2px solid var(--border); border-radius: var(--radius); cursor: pointer; transition: all var(--transition); }
+.optimize-option:hover { border-color: var(--primary); }
+.optimize-option.selected { border-color: var(--primary); background: var(--primary-light); }
+.optimize-option input { margin-top: 2px; }
+.optimize-option strong { display: block; font-size: 13px; color: var(--text-dark); }
+.optimize-option span { font-size: 12px; color: var(--text-light); }
+
+/* ========== CUSTOM STOPS ========== */
+.custom-stop { background: var(--border-light); border-radius: var(--radius); }
+.custom-stop .stop-number { background: var(--text-light) !important; }

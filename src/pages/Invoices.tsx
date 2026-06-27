@@ -14,7 +14,8 @@ export default function Invoices() {
   const [showPayModal, setShowPayModal] = useState(false);
   const [payAmount, setPayAmount] = useState('');
   const [payMethod, setPayMethod] = useState('credit_card');
-  const [form, setForm] = useState({ customerId: '', jobId: '', dueDays: 30, notes: '' });
+  const defaultDueDate = new Date(2026, 6, 21).toISOString().split('T')[0];
+  const [form, setForm] = useState({ customerId: '', jobId: '', dueDate: defaultDueDate, notes: '' });
   const [lineItems, setLineItems] = useState<LineItem[]>([{ id: 'i1', description: '', quantity: 1, unitPrice: 0 }]);
 
   const filtered = invoices.filter(i => {
@@ -58,9 +59,6 @@ export default function Invoices() {
     if (!form.customerId) return;
     const subtotal = lineItems.filter(li => li.description).reduce((s, li) => s + li.quantity * li.unitPrice, 0);
     const tax = subtotal * 0.07;
-    const today = new Date(2026, 5, 21);
-    const dueDate = new Date(today);
-    dueDate.setDate(dueDate.getDate() + form.dueDays);
     const newInv = {
       id: `inv${Date.now()}`,
       number: `INV-${String(invoices.length + 1).padStart(3, '0')}`,
@@ -69,7 +67,7 @@ export default function Invoices() {
       lineItems: lineItems.filter(li => li.description),
       subtotal, tax, total: subtotal + tax, amountPaid: 0,
       status: 'draft' as InvoiceStatus,
-      dueDate: dueDate.toISOString().split('T')[0],
+      dueDate: form.dueDate,
       notes: form.notes,
       createdAt: '2026-06-21',
     };
@@ -187,7 +185,7 @@ export default function Invoices() {
           <div className="form-group"><label>From Job</label>
             <select value={form.jobId} onChange={e => handleImportFromJob(e.target.value)} disabled={!form.customerId}><option value="">None (manual)</option>{customerJobs.map(j => <option key={j.id} value={j.id}>{j.title}</option>)}</select>
           </div>
-          <div className="form-group"><label>Due in (days)</label><input type="number" value={form.dueDays} onChange={e => setForm(p => ({ ...p, dueDays: parseInt(e.target.value) || 30 }))} /></div>
+          <div className="form-group"><label>Due Date</label><input type="date" value={form.dueDate} onChange={e => setForm(p => ({ ...p, dueDate: e.target.value }))} /></div>
           <div className="form-group full-width">
             <label>Line Items</label>
             <table className="line-items-table editable">
@@ -195,7 +193,7 @@ export default function Invoices() {
               <tbody>{lineItems.map(li => (
                 <tr key={li.id}><td><input value={li.description} onChange={e => updateLineItem(li.id, 'description', e.target.value)} placeholder="Item description" /></td>
                 <td><input type="number" min="1" value={li.quantity} onChange={e => updateLineItem(li.id, 'quantity', parseFloat(e.target.value) || 1)} /></td>
-                <td><input type="number" min="0" step="0.01" value={li.unitPrice} onChange={e => updateLineItem(li.id, 'unitPrice', parseFloat(e.target.value) || 0)} /></td>
+                <td><input type="number" min="0" step="0.01" value={li.unitPrice || ''} placeholder="0.00" onChange={e => updateLineItem(li.id, 'unitPrice', parseFloat(e.target.value) || 0)} /></td>
                 <td><button className="btn-icon" onClick={() => removeLineItem(li.id)}><Trash2 size={14} /></button></td></tr>
               ))}</tbody>
             </table>

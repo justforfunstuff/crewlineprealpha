@@ -1,16 +1,30 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import { createBillingPortalSession } from '../lib/api';
+import { createBillingPortalSession, createCheckoutSession } from '../lib/api';
 import { showToast } from '../components/Toast';
 import StripeConnectStatus from '../components/payment/StripeConnectStatus';
+import Modal from '../components/Modal';
+import PricingCard from '../components/payment/PricingCard';
 import { CreditCard, FileText, Shield, ExternalLink, Loader2, Info } from 'lucide-react';
-import { PLANS, PLATFORM_FEE_RATE } from '../lib/stripe';
+import { PLANS, type PlanId } from '../lib/stripe';
 
 export default function Settings() {
   const { tenant, profile } = useAuth();
-  const navigate = useNavigate();
   const [billingLoading, setBillingLoading] = useState(false);
+  const [showPricing, setShowPricing] = useState(false);
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+
+  const handleSelectPlan = async (planId: PlanId) => {
+    if (!tenant) return;
+    setLoadingPlan(planId);
+    try {
+      const { url } = await createCheckoutSession(planId, tenant.id);
+      window.location.href = url;
+    } catch (err) {
+      showToast('error', (err as Error).message);
+      setLoadingPlan(null);
+    }
+  };
 
   const handleManageBilling = async () => {
     if (!tenant) return;
@@ -46,7 +60,7 @@ export default function Settings() {
           ) : (
             <div className="subscription-info">
               <p>You're on the <strong>Free</strong> plan.</p>
-              <button className="btn btn-primary" onClick={() => navigate('/pricing')}>Upgrade Your Plan</button>
+              <button className="btn btn-primary" onClick={() => setShowPricing(true)}>Upgrade Your Plan</button>
             </div>
           )}
         </div>
@@ -96,6 +110,14 @@ export default function Settings() {
           </div>
         </div>
       </div>
+
+      <Modal open={showPricing} onClose={() => setShowPricing(false)} title="Choose Your Plan" width="900px">
+        <div className="pricing-grid" style={{ padding: '16px 0' }}>
+          {(Object.entries(PLANS) as [PlanId, typeof PLANS[PlanId]][]).map(([id, plan]) => (
+            <PricingCard key={id} name={plan.name} price={plan.price} interval={plan.interval} commitment={plan.commitment} savings={plan.savings} featured={id === 'yearly'} current={tenant?.subscription_plan === id} loading={loadingPlan === id} onSelect={() => handleSelectPlan(id)} />
+          ))}
+        </div>
+      </Modal>
     </div>
   );
 }

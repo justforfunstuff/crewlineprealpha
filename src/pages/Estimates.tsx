@@ -14,7 +14,7 @@ export default function Estimates() {
   const [search, setSearch] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>('e2');
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ customerId: '', validDays: 30, notes: '' });
+  const [form, setForm] = useState({ customerId: '', title: '', description: '', validDays: 30, notes: '' });
   const [lineItems, setLineItems] = useState<LineItem[]>([{ id: 'e1', description: '', quantity: 1, unitPrice: 0, optional: false }]);
 
   const filtered = estimates.filter(e => {
@@ -55,7 +55,7 @@ export default function Estimates() {
     setEstimates(prev => [...prev, newEst]);
     setSelectedId(newEst.id);
     setShowModal(false);
-    setForm({ customerId: '', validDays: 30, notes: '' });
+    setForm({ customerId: '', title: '', description: '', validDays: 30, notes: '' });
     setLineItems([{ id: 'e1', description: '', quantity: 1, unitPrice: 0, optional: false }]);
     showToast('success', `Estimate ${newEst.number} created`);
   };
@@ -134,10 +134,12 @@ export default function Estimates() {
 
       <Modal open={showModal} onClose={() => setShowModal(false)} title="New Estimate" width="680px">
         <div className="form-grid">
+          <div className="form-group full-width"><label>Title</label><input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g., Kitchen Remodel Estimate" /></div>
           <div className="form-group"><label>Customer *</label>
             <select value={form.customerId} onChange={e => setForm(p => ({ ...p, customerId: e.target.value }))}><option value="">Select...</option>{customers.map(c => <option key={c.id} value={c.id}>{c.firstName} {c.lastName}</option>)}</select>
           </div>
           <div className="form-group"><label>Valid for (days)</label><input type="number" value={form.validDays} onChange={e => setForm(p => ({ ...p, validDays: parseInt(e.target.value) || 30 }))} /></div>
+          <div className="form-group full-width"><label>Description</label><textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} rows={2} placeholder="Scope of work..." /></div>
           <div className="form-group full-width">
             <label>Line Items</label>
             <table className="line-items-table editable">
@@ -146,7 +148,7 @@ export default function Estimates() {
                 <tr key={li.id}>
                   <td><input value={li.description} onChange={e => updateLineItem(li.id, 'description', e.target.value)} placeholder="Item description" /></td>
                   <td><input type="number" min="1" value={li.quantity} onChange={e => updateLineItem(li.id, 'quantity', parseFloat(e.target.value) || 1)} /></td>
-                  <td><input type="number" min="0" step="0.01" value={li.unitPrice} onChange={e => updateLineItem(li.id, 'unitPrice', parseFloat(e.target.value) || 0)} /></td>
+                  <td><input type="number" min="0" step="0.01" value={li.unitPrice || ''} placeholder="0.00" onChange={e => updateLineItem(li.id, 'unitPrice', parseFloat(e.target.value) || 0)} /></td>
                   <td><input type="checkbox" checked={li.optional || false} onChange={e => updateLineItem(li.id, 'optional', e.target.checked)} /></td>
                   <td><button className="btn-icon" onClick={() => removeLineItem(li.id)}><Trash2 size={14} /></button></td>
                 </tr>

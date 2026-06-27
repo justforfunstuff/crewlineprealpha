@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { format, addDays, startOfWeek } from 'date-fns';
-import { ChevronLeft, ChevronRight, Plus, GripVertical, Clock, User, MapPin } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, GripVertical, Clock, User, MapPin, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import { showToast } from '../components/Toast';
 
 const HOURS = Array.from({ length: 13 }, (_, i) => i + 6);
@@ -12,6 +12,7 @@ export default function Schedule() {
   const [view, setView] = useState<'day' | 'week'>('week');
   const [dragJob, setDragJob] = useState<string | null>(null);
   const [dragOverCell, setDragOverCell] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const weekDays = Array.from({ length: view === 'week' ? 7 : 1 }, (_, i) =>
@@ -90,6 +91,9 @@ export default function Schedule() {
             <button onClick={() => setCurrentDate(d => addDays(d, view === 'week' ? 7 : 1))}><ChevronRight size={18} /></button>
           </div>
           <button className="btn btn-primary"><Plus size={16} /> New Job</button>
+          <button className="btn btn-sm" onClick={() => setSidebarOpen(p => !p)} title={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}>
+            {sidebarOpen ? <PanelRightClose size={16} /> : <PanelRightOpen size={16} />}
+          </button>
         </div>
       </div>
 
@@ -164,7 +168,7 @@ export default function Schedule() {
         </div>
       </div>
 
-      <div className="schedule-sidebar">
+      <div className={`schedule-sidebar ${sidebarOpen ? 'open' : 'closed'}`}>
         <h3>Unscheduled Jobs</h3>
         <p className="feature-description">Drag a job onto the calendar to schedule it.</p>
         <div className="unscheduled-list">
