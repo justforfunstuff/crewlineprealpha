@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, typ
 import type { Customer, Job, Estimate, Invoice, TeamMember, Message, DailyStats, JobStatus, EstimateStatus, InvoiceStatus } from '../types';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
+import { showToast } from '../components/Toast';
 
 function camelToSnake(obj: Record<string, unknown>): Record<string, unknown> {
   const result: Record<string, unknown> = {};
@@ -127,99 +128,120 @@ export function AppProvider({ children }: { children: ReactNode }) {
     fetchAll();
   }, [tenantId]);
 
+  const SAVE_FAIL_MSG = 'Failed to save — check your internet connection and try again.';
+  const DELETE_FAIL_MSG = 'Failed to delete — check your internet connection and try again.';
+
   // ===== CUSTOMER MUTATIONS =====
   const addCustomer = useCallback(async (c: Omit<Customer, 'id' | 'createdAt'>) => {
     if (!tenantId) return null;
     const row = { tenant_id: tenantId, first_name: c.firstName, last_name: c.lastName, email: c.email, phone: c.phone, address: c.address, city: c.city, state: c.state, zip: c.zip, notes: c.notes, tags: c.tags, source: c.source, total_spent: c.totalSpent, job_count: c.jobCount, rating: c.rating, last_contact_date: c.lastContactDate || null };
     const { data, error } = await supabase.from('customers').insert(row).select().single();
-    if (error || !data) return null;
+    if (error || !data) { showToast('error', SAVE_FAIL_MSG); return null; }
     const mapped = mapCustomer(data as Record<string, unknown>);
     setCustomers(prev => [mapped, ...prev]);
     return mapped;
   }, [tenantId]);
 
   const updateCustomer = useCallback(async (id: string, updates: Partial<Customer>) => {
+    const snapshot = customers;
     setCustomers(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
     const snakeUpdates = camelToSnake(updates as Record<string, unknown>);
-    await supabase.from('customers').update(snakeUpdates).eq('id', id);
-  }, []);
+    const { error } = await supabase.from('customers').update(snakeUpdates).eq('id', id);
+    if (error) { setCustomers(snapshot); showToast('error', SAVE_FAIL_MSG); }
+  }, [customers]);
 
   const deleteCustomer = useCallback(async (id: string) => {
+    const snapshot = customers;
     setCustomers(prev => prev.filter(c => c.id !== id));
-    await supabase.from('customers').delete().eq('id', id);
-  }, []);
+    const { error } = await supabase.from('customers').delete().eq('id', id);
+    if (error) { setCustomers(snapshot); showToast('error', DELETE_FAIL_MSG); }
+  }, [customers]);
 
   // ===== JOB MUTATIONS =====
   const addJob = useCallback(async (j: Omit<Job, 'id' | 'createdAt'>) => {
     if (!tenantId) return null;
     const row = { tenant_id: tenantId, title: j.title, description: j.description, customer_id: j.customerId || null, assigned_to: j.assignedTo, status: j.status, priority: j.priority, scheduled_date: j.scheduledDate || null, scheduled_time: j.scheduledTime || null, estimated_duration: j.estimatedDuration, address: j.address, city: j.city, line_items: j.lineItems, total_amount: j.totalAmount, notes: j.notes, photos: j.photos };
     const { data, error } = await supabase.from('jobs').insert(row).select().single();
-    if (error || !data) return null;
+    if (error || !data) { showToast('error', SAVE_FAIL_MSG); return null; }
     const mapped = mapJob(data as Record<string, unknown>);
     setJobs(prev => [...prev, mapped]);
     return mapped;
   }, [tenantId]);
 
-  const updateJob = useCallback((id: string, updates: Partial<Job>) => {
+  const updateJob = useCallback(async (id: string, updates: Partial<Job>) => {
+    const snapshot = jobs;
     setJobs(prev => prev.map(j => j.id === id ? { ...j, ...updates } : j));
     const snakeUpdates = camelToSnake(updates as Record<string, unknown>);
-    supabase.from('jobs').update(snakeUpdates).eq('id', id).then();
-  }, []);
+    const { error } = await supabase.from('jobs').update(snakeUpdates).eq('id', id);
+    if (error) { setJobs(snapshot); showToast('error', SAVE_FAIL_MSG); }
+  }, [jobs]);
 
   const deleteJob = useCallback(async (id: string) => {
+    const snapshot = jobs;
     setJobs(prev => prev.filter(j => j.id !== id));
-    await supabase.from('jobs').delete().eq('id', id);
-  }, []);
+    const { error } = await supabase.from('jobs').delete().eq('id', id);
+    if (error) { setJobs(snapshot); showToast('error', DELETE_FAIL_MSG); }
+  }, [jobs]);
 
   // ===== ESTIMATE MUTATIONS =====
   const addEstimate = useCallback(async (e: Omit<Estimate, 'id' | 'createdAt'>) => {
     if (!tenantId) return null;
     const row = { tenant_id: tenantId, number: e.number, customer_id: e.customerId || null, job_id: e.jobId || null, line_items: e.lineItems, subtotal: e.subtotal, tax: e.tax, total: e.total, status: e.status, valid_until: e.validUntil || null, notes: e.notes, sent_at: e.sentAt || null, approved_at: e.approvedAt || null };
     const { data, error } = await supabase.from('estimates').insert(row).select().single();
-    if (error || !data) return null;
+    if (error || !data) { showToast('error', SAVE_FAIL_MSG); return null; }
     const mapped = mapEstimate(data as Record<string, unknown>);
     setEstimates(prev => [mapped, ...prev]);
     return mapped;
   }, [tenantId]);
 
   const updateEstimate = useCallback(async (id: string, updates: Partial<Estimate>) => {
+    const snapshot = estimates;
     setEstimates(prev => prev.map(e => e.id === id ? { ...e, ...updates } : e));
     const snakeUpdates = camelToSnake(updates as Record<string, unknown>);
-    await supabase.from('estimates').update(snakeUpdates).eq('id', id);
-  }, []);
+    const { error } = await supabase.from('estimates').update(snakeUpdates).eq('id', id);
+    if (error) { setEstimates(snapshot); showToast('error', SAVE_FAIL_MSG); }
+  }, [estimates]);
 
   const deleteEstimate = useCallback(async (id: string) => {
+    const snapshot = estimates;
     setEstimates(prev => prev.filter(e => e.id !== id));
-    await supabase.from('estimates').delete().eq('id', id);
-  }, []);
+    const { error } = await supabase.from('estimates').delete().eq('id', id);
+    if (error) { setEstimates(snapshot); showToast('error', DELETE_FAIL_MSG); }
+  }, [estimates]);
 
   // ===== INVOICE MUTATIONS =====
   const addInvoice = useCallback(async (i: Omit<Invoice, 'id' | 'createdAt'>) => {
     if (!tenantId) return null;
     const row = { tenant_id: tenantId, number: i.number, customer_id: i.customerId || null, job_id: i.jobId || null, line_items: i.lineItems, subtotal: i.subtotal, tax: i.tax, total: i.total, amount_paid: i.amountPaid, status: i.status, due_date: i.dueDate || null, notes: i.notes, sent_at: i.sentAt || null, paid_at: i.paidAt || null };
     const { data, error } = await supabase.from('invoices').insert(row).select().single();
-    if (error || !data) return null;
+    if (error || !data) { showToast('error', SAVE_FAIL_MSG); return null; }
     const mapped = mapInvoice(data as Record<string, unknown>);
     setInvoices(prev => [mapped, ...prev]);
     return mapped;
   }, [tenantId]);
 
   const updateInvoice = useCallback(async (id: string, updates: Partial<Invoice>) => {
+    const snapshot = invoices;
     setInvoices(prev => prev.map(i => i.id === id ? { ...i, ...updates } : i));
     const snakeUpdates = camelToSnake(updates as Record<string, unknown>);
-    await supabase.from('invoices').update(snakeUpdates).eq('id', id);
-  }, []);
+    const { error } = await supabase.from('invoices').update(snakeUpdates).eq('id', id);
+    if (error) { setInvoices(snapshot); showToast('error', SAVE_FAIL_MSG); }
+  }, [invoices]);
 
   const deleteInvoice = useCallback(async (id: string) => {
+    const snapshot = invoices;
     setInvoices(prev => prev.filter(i => i.id !== id));
-    await supabase.from('invoices').delete().eq('id', id);
-  }, []);
+    const { error } = await supabase.from('invoices').delete().eq('id', id);
+    if (error) { setInvoices(snapshot); showToast('error', DELETE_FAIL_MSG); }
+  }, [invoices]);
 
   // ===== MESSAGE MUTATIONS =====
   const addMessage = useCallback((m: Message) => {
     setMessages(prev => [...prev, m]);
     if (tenantId) {
-      supabase.from('messages').insert({ tenant_id: tenantId, customer_id: m.customerId, direction: m.direction, channel: m.channel, content: m.content, read: m.read }).then();
+      supabase.from('messages').insert({ tenant_id: tenantId, customer_id: m.customerId, direction: m.direction, channel: m.channel, content: m.content, read: m.read }).then(({ error }) => {
+        if (error) showToast('error', 'Message saved locally but failed to sync. Check your connection.');
+      });
     }
   }, [tenantId]);
 
