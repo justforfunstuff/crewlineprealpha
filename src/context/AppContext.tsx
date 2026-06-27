@@ -4,15 +4,6 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
 import { showToast } from '../components/Toast';
 
-function camelToSnake(obj: Record<string, unknown>): Record<string, unknown> {
-  const result: Record<string, unknown> = {};
-  for (const key in obj) {
-    const snakeKey = key.replace(/[A-Z]/g, c => `_${c.toLowerCase()}`);
-    result[snakeKey] = obj[key];
-  }
-  return result;
-}
-
 function snakeToCamel(row: Record<string, unknown>): Record<string, unknown> {
   const result: Record<string, unknown> = {};
   for (const key in row) {
@@ -50,6 +41,85 @@ function mapTeamMember(row: Record<string, unknown>): TeamMember {
 function mapMessage(row: Record<string, unknown>): Message {
   const m = snakeToCamel(row);
   return { id: m.id as string, customerId: m.customerId as string, direction: m.direction as Message['direction'], channel: m.channel as Message['channel'], content: m.content as string, timestamp: m.createdAt as string, read: m.read as boolean };
+}
+
+function customerToRow(c: Partial<Customer>): Record<string, unknown> {
+  const row: Record<string, unknown> = {};
+  if (c.firstName !== undefined) row.first_name = c.firstName;
+  if (c.lastName !== undefined) row.last_name = c.lastName;
+  if (c.email !== undefined) row.email = c.email;
+  if (c.phone !== undefined) row.phone = c.phone;
+  if (c.address !== undefined) row.address = c.address;
+  if (c.city !== undefined) row.city = c.city;
+  if (c.state !== undefined) row.state = c.state;
+  if (c.zip !== undefined) row.zip = c.zip;
+  if (c.notes !== undefined) row.notes = c.notes;
+  if (c.tags !== undefined) row.tags = c.tags;
+  if (c.source !== undefined) row.source = c.source;
+  if (c.totalSpent !== undefined) row.total_spent = c.totalSpent;
+  if (c.jobCount !== undefined) row.job_count = c.jobCount;
+  if (c.rating !== undefined) row.rating = c.rating;
+  if (c.lastContactDate !== undefined) row.last_contact_date = c.lastContactDate || null;
+  return row;
+}
+
+function jobToRow(j: Partial<Job>): Record<string, unknown> {
+  const row: Record<string, unknown> = {};
+  if (j.title !== undefined) row.title = j.title;
+  if (j.description !== undefined) row.description = j.description;
+  if (j.customerId !== undefined) row.customer_id = j.customerId || null;
+  if (j.assignedTo !== undefined) row.assigned_to = j.assignedTo;
+  if (j.status !== undefined) row.status = j.status;
+  if (j.priority !== undefined) row.priority = j.priority;
+  if (j.scheduledDate !== undefined) row.scheduled_date = j.scheduledDate || null;
+  if (j.scheduledTime !== undefined) row.scheduled_time = j.scheduledTime || null;
+  if (j.estimatedDuration !== undefined) row.estimated_duration = j.estimatedDuration;
+  if (j.actualDuration !== undefined) row.actual_duration = j.actualDuration;
+  if (j.address !== undefined) row.address = j.address;
+  if (j.city !== undefined) row.city = j.city;
+  if (j.lat !== undefined) row.lat = j.lat;
+  if (j.lng !== undefined) row.lng = j.lng;
+  if (j.lineItems !== undefined) row.line_items = j.lineItems;
+  if (j.totalAmount !== undefined) row.total_amount = j.totalAmount;
+  if (j.notes !== undefined) row.notes = j.notes;
+  if (j.photos !== undefined) row.photos = j.photos;
+  if (j.completedAt !== undefined) row.completed_at = j.completedAt || null;
+  return row;
+}
+
+function estimateToRow(e: Partial<Estimate>): Record<string, unknown> {
+  const row: Record<string, unknown> = {};
+  if (e.number !== undefined) row.number = e.number;
+  if (e.customerId !== undefined) row.customer_id = e.customerId || null;
+  if (e.jobId !== undefined) row.job_id = e.jobId || null;
+  if (e.lineItems !== undefined) row.line_items = e.lineItems;
+  if (e.subtotal !== undefined) row.subtotal = e.subtotal;
+  if (e.tax !== undefined) row.tax = e.tax;
+  if (e.total !== undefined) row.total = e.total;
+  if (e.status !== undefined) row.status = e.status;
+  if (e.validUntil !== undefined) row.valid_until = e.validUntil || null;
+  if (e.notes !== undefined) row.notes = e.notes;
+  if (e.sentAt !== undefined) row.sent_at = e.sentAt || null;
+  if (e.approvedAt !== undefined) row.approved_at = e.approvedAt || null;
+  return row;
+}
+
+function invoiceToRow(i: Partial<Invoice>): Record<string, unknown> {
+  const row: Record<string, unknown> = {};
+  if (i.number !== undefined) row.number = i.number;
+  if (i.customerId !== undefined) row.customer_id = i.customerId || null;
+  if (i.jobId !== undefined) row.job_id = i.jobId || null;
+  if (i.lineItems !== undefined) row.line_items = i.lineItems;
+  if (i.subtotal !== undefined) row.subtotal = i.subtotal;
+  if (i.tax !== undefined) row.tax = i.tax;
+  if (i.total !== undefined) row.total = i.total;
+  if (i.amountPaid !== undefined) row.amount_paid = i.amountPaid;
+  if (i.status !== undefined) row.status = i.status;
+  if (i.dueDate !== undefined) row.due_date = i.dueDate || null;
+  if (i.notes !== undefined) row.notes = i.notes;
+  if (i.sentAt !== undefined) row.sent_at = i.sentAt || null;
+  if (i.paidAt !== undefined) row.paid_at = i.paidAt || null;
+  return row;
 }
 
 interface AppState {
@@ -128,119 +198,116 @@ export function AppProvider({ children }: { children: ReactNode }) {
     fetchAll();
   }, [tenantId]);
 
-  const SAVE_FAIL_MSG = 'Failed to save — check your internet connection and try again.';
-  const DELETE_FAIL_MSG = 'Failed to delete — check your internet connection and try again.';
-
   // ===== CUSTOMER MUTATIONS =====
   const addCustomer = useCallback(async (c: Omit<Customer, 'id' | 'createdAt'>) => {
-    if (!tenantId) return null;
-    const row = { tenant_id: tenantId, first_name: c.firstName, last_name: c.lastName, email: c.email, phone: c.phone, address: c.address, city: c.city, state: c.state, zip: c.zip, notes: c.notes, tags: c.tags, source: c.source, total_spent: c.totalSpent, job_count: c.jobCount, rating: c.rating, last_contact_date: c.lastContactDate || null };
+    if (!tenantId) { showToast('error', 'No business account found. Please log out and sign in again.'); return null; }
+    const row = { tenant_id: tenantId, ...customerToRow(c) };
     const { data, error } = await supabase.from('customers').insert(row).select().single();
-    if (error || !data) { showToast('error', SAVE_FAIL_MSG); return null; }
+    if (error) { showToast('error', `Save failed: ${error.message}`); console.error('addCustomer error:', error); return null; }
+    if (!data) { showToast('error', 'Save failed: no data returned.'); return null; }
     const mapped = mapCustomer(data as Record<string, unknown>);
     setCustomers(prev => [mapped, ...prev]);
     return mapped;
   }, [tenantId]);
 
   const updateCustomer = useCallback(async (id: string, updates: Partial<Customer>) => {
-    const snapshot = customers;
-    setCustomers(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
-    const snakeUpdates = camelToSnake(updates as Record<string, unknown>);
-    const { error } = await supabase.from('customers').update(snakeUpdates).eq('id', id);
-    if (error) { setCustomers(snapshot); showToast('error', SAVE_FAIL_MSG); }
+    const prev = customers;
+    setCustomers(p => p.map(c => c.id === id ? { ...c, ...updates } : c));
+    const { error } = await supabase.from('customers').update(customerToRow(updates)).eq('id', id);
+    if (error) { setCustomers(prev); showToast('error', `Save failed: ${error.message}`); console.error('updateCustomer error:', error); }
   }, [customers]);
 
   const deleteCustomer = useCallback(async (id: string) => {
-    const snapshot = customers;
-    setCustomers(prev => prev.filter(c => c.id !== id));
+    const prev = customers;
+    setCustomers(p => p.filter(c => c.id !== id));
     const { error } = await supabase.from('customers').delete().eq('id', id);
-    if (error) { setCustomers(snapshot); showToast('error', DELETE_FAIL_MSG); }
+    if (error) { setCustomers(prev); showToast('error', `Delete failed: ${error.message}`); console.error('deleteCustomer error:', error); }
   }, [customers]);
 
   // ===== JOB MUTATIONS =====
   const addJob = useCallback(async (j: Omit<Job, 'id' | 'createdAt'>) => {
-    if (!tenantId) return null;
-    const row = { tenant_id: tenantId, title: j.title, description: j.description, customer_id: j.customerId || null, assigned_to: j.assignedTo, status: j.status, priority: j.priority, scheduled_date: j.scheduledDate || null, scheduled_time: j.scheduledTime || null, estimated_duration: j.estimatedDuration, address: j.address, city: j.city, line_items: j.lineItems, total_amount: j.totalAmount, notes: j.notes, photos: j.photos };
+    if (!tenantId) { showToast('error', 'No business account found. Please log out and sign in again.'); return null; }
+    const row = { tenant_id: tenantId, ...jobToRow(j) };
     const { data, error } = await supabase.from('jobs').insert(row).select().single();
-    if (error || !data) { showToast('error', SAVE_FAIL_MSG); return null; }
+    if (error) { showToast('error', `Save failed: ${error.message}`); console.error('addJob error:', error); return null; }
+    if (!data) { showToast('error', 'Save failed: no data returned.'); return null; }
     const mapped = mapJob(data as Record<string, unknown>);
-    setJobs(prev => [...prev, mapped]);
+    setJobs(p => [...p, mapped]);
     return mapped;
   }, [tenantId]);
 
   const updateJob = useCallback(async (id: string, updates: Partial<Job>) => {
-    const snapshot = jobs;
-    setJobs(prev => prev.map(j => j.id === id ? { ...j, ...updates } : j));
-    const snakeUpdates = camelToSnake(updates as Record<string, unknown>);
-    const { error } = await supabase.from('jobs').update(snakeUpdates).eq('id', id);
-    if (error) { setJobs(snapshot); showToast('error', SAVE_FAIL_MSG); }
+    const prev = jobs;
+    setJobs(p => p.map(j => j.id === id ? { ...j, ...updates } : j));
+    const { error } = await supabase.from('jobs').update(jobToRow(updates)).eq('id', id);
+    if (error) { setJobs(prev); showToast('error', `Save failed: ${error.message}`); console.error('updateJob error:', error); }
   }, [jobs]);
 
   const deleteJob = useCallback(async (id: string) => {
-    const snapshot = jobs;
-    setJobs(prev => prev.filter(j => j.id !== id));
+    const prev = jobs;
+    setJobs(p => p.filter(j => j.id !== id));
     const { error } = await supabase.from('jobs').delete().eq('id', id);
-    if (error) { setJobs(snapshot); showToast('error', DELETE_FAIL_MSG); }
+    if (error) { setJobs(prev); showToast('error', `Delete failed: ${error.message}`); console.error('deleteJob error:', error); }
   }, [jobs]);
 
   // ===== ESTIMATE MUTATIONS =====
   const addEstimate = useCallback(async (e: Omit<Estimate, 'id' | 'createdAt'>) => {
-    if (!tenantId) return null;
-    const row = { tenant_id: tenantId, number: e.number, customer_id: e.customerId || null, job_id: e.jobId || null, line_items: e.lineItems, subtotal: e.subtotal, tax: e.tax, total: e.total, status: e.status, valid_until: e.validUntil || null, notes: e.notes, sent_at: e.sentAt || null, approved_at: e.approvedAt || null };
+    if (!tenantId) { showToast('error', 'No business account found. Please log out and sign in again.'); return null; }
+    const row = { tenant_id: tenantId, ...estimateToRow(e) };
     const { data, error } = await supabase.from('estimates').insert(row).select().single();
-    if (error || !data) { showToast('error', SAVE_FAIL_MSG); return null; }
+    if (error) { showToast('error', `Save failed: ${error.message}`); console.error('addEstimate error:', error); return null; }
+    if (!data) { showToast('error', 'Save failed: no data returned.'); return null; }
     const mapped = mapEstimate(data as Record<string, unknown>);
-    setEstimates(prev => [mapped, ...prev]);
+    setEstimates(p => [mapped, ...p]);
     return mapped;
   }, [tenantId]);
 
   const updateEstimate = useCallback(async (id: string, updates: Partial<Estimate>) => {
-    const snapshot = estimates;
-    setEstimates(prev => prev.map(e => e.id === id ? { ...e, ...updates } : e));
-    const snakeUpdates = camelToSnake(updates as Record<string, unknown>);
-    const { error } = await supabase.from('estimates').update(snakeUpdates).eq('id', id);
-    if (error) { setEstimates(snapshot); showToast('error', SAVE_FAIL_MSG); }
+    const prev = estimates;
+    setEstimates(p => p.map(e => e.id === id ? { ...e, ...updates } : e));
+    const { error } = await supabase.from('estimates').update(estimateToRow(updates)).eq('id', id);
+    if (error) { setEstimates(prev); showToast('error', `Save failed: ${error.message}`); console.error('updateEstimate error:', error); }
   }, [estimates]);
 
   const deleteEstimate = useCallback(async (id: string) => {
-    const snapshot = estimates;
-    setEstimates(prev => prev.filter(e => e.id !== id));
+    const prev = estimates;
+    setEstimates(p => p.filter(e => e.id !== id));
     const { error } = await supabase.from('estimates').delete().eq('id', id);
-    if (error) { setEstimates(snapshot); showToast('error', DELETE_FAIL_MSG); }
+    if (error) { setEstimates(prev); showToast('error', `Delete failed: ${error.message}`); console.error('deleteEstimate error:', error); }
   }, [estimates]);
 
   // ===== INVOICE MUTATIONS =====
   const addInvoice = useCallback(async (i: Omit<Invoice, 'id' | 'createdAt'>) => {
-    if (!tenantId) return null;
-    const row = { tenant_id: tenantId, number: i.number, customer_id: i.customerId || null, job_id: i.jobId || null, line_items: i.lineItems, subtotal: i.subtotal, tax: i.tax, total: i.total, amount_paid: i.amountPaid, status: i.status, due_date: i.dueDate || null, notes: i.notes, sent_at: i.sentAt || null, paid_at: i.paidAt || null };
+    if (!tenantId) { showToast('error', 'No business account found. Please log out and sign in again.'); return null; }
+    const row = { tenant_id: tenantId, ...invoiceToRow(i) };
     const { data, error } = await supabase.from('invoices').insert(row).select().single();
-    if (error || !data) { showToast('error', SAVE_FAIL_MSG); return null; }
+    if (error) { showToast('error', `Save failed: ${error.message}`); console.error('addInvoice error:', error); return null; }
+    if (!data) { showToast('error', 'Save failed: no data returned.'); return null; }
     const mapped = mapInvoice(data as Record<string, unknown>);
-    setInvoices(prev => [mapped, ...prev]);
+    setInvoices(p => [mapped, ...p]);
     return mapped;
   }, [tenantId]);
 
   const updateInvoice = useCallback(async (id: string, updates: Partial<Invoice>) => {
-    const snapshot = invoices;
-    setInvoices(prev => prev.map(i => i.id === id ? { ...i, ...updates } : i));
-    const snakeUpdates = camelToSnake(updates as Record<string, unknown>);
-    const { error } = await supabase.from('invoices').update(snakeUpdates).eq('id', id);
-    if (error) { setInvoices(snapshot); showToast('error', SAVE_FAIL_MSG); }
+    const prev = invoices;
+    setInvoices(p => p.map(i => i.id === id ? { ...i, ...updates } : i));
+    const { error } = await supabase.from('invoices').update(invoiceToRow(updates)).eq('id', id);
+    if (error) { setInvoices(prev); showToast('error', `Save failed: ${error.message}`); console.error('updateInvoice error:', error); }
   }, [invoices]);
 
   const deleteInvoice = useCallback(async (id: string) => {
-    const snapshot = invoices;
-    setInvoices(prev => prev.filter(i => i.id !== id));
+    const prev = invoices;
+    setInvoices(p => p.filter(i => i.id !== id));
     const { error } = await supabase.from('invoices').delete().eq('id', id);
-    if (error) { setInvoices(snapshot); showToast('error', DELETE_FAIL_MSG); }
+    if (error) { setInvoices(prev); showToast('error', `Delete failed: ${error.message}`); console.error('deleteInvoice error:', error); }
   }, [invoices]);
 
   // ===== MESSAGE MUTATIONS =====
   const addMessage = useCallback((m: Message) => {
-    setMessages(prev => [...prev, m]);
+    setMessages(p => [...p, m]);
     if (tenantId) {
       supabase.from('messages').insert({ tenant_id: tenantId, customer_id: m.customerId, direction: m.direction, channel: m.channel, content: m.content, read: m.read }).then(({ error }) => {
-        if (error) showToast('error', 'Message saved locally but failed to sync. Check your connection.');
+        if (error) { showToast('error', `Message sync failed: ${error.message}`); console.error('addMessage error:', error); }
       });
     }
   }, [tenantId]);
