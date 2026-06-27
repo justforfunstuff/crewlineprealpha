@@ -10,7 +10,7 @@ const STATUS_ICONS: Record<EstimateStatus, typeof Clock> = {
 };
 
 export default function Estimates() {
-  const { estimates, customers, setEstimates } = useApp();
+  const { estimates, customers, addEstimate: addEstimateToDb, updateEstimate, deleteEstimate, setEstimates } = useApp();
   const [search, setSearch] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>('e2');
   const [showModal, setShowModal] = useState(false);
@@ -25,8 +25,11 @@ export default function Estimates() {
   const selected = estimates.find(e => e.id === selectedId);
   const selectedCustomer = selected ? customers.find(c => c.id === selected.customerId) : null;
 
-  const handleStatusUpdate = (id: string, status: EstimateStatus) => {
-    setEstimates(prev => prev.map(e => e.id === id ? { ...e, status, ...(status === 'sent' ? { sentAt: '2026-06-21' } : {}), ...(status === 'approved' ? { approvedAt: '2026-06-21' } : {}) } : e));
+  const handleStatusUpdate = async (id: string, status: EstimateStatus) => {
+    const updates: Partial<Estimate> = { status };
+    if (status === 'sent') updates.sentAt = new Date().toISOString().split('T')[0];
+    if (status === 'approved') updates.approvedAt = new Date().toISOString().split('T')[0];
+    await updateEstimate(id, updates);
     showToast('success', `Estimate ${status}`);
   };
 
@@ -34,15 +37,14 @@ export default function Estimates() {
   const updateLineItem = (id: string, field: string, value: string | number | boolean) => setLineItems(prev => prev.map(li => li.id === id ? { ...li, [field]: value } : li));
   const removeLineItem = (id: string) => setLineItems(prev => prev.filter(li => li.id !== id));
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!form.customerId) return;
     const subtotal = lineItems.filter(li => li.description).reduce((s, li) => s + li.quantity * li.unitPrice, 0);
     const tax = subtotal * 0.07;
-    const today = new Date(2026, 5, 21);
+    const today = new Date();
     const validDate = new Date(today);
     validDate.setDate(validDate.getDate() + form.validDays);
-    const newEst = {
-      id: `e${Date.now()}`,
+    const result = await addEstimateToDb({
       number: `EST-${String(estimates.length + 1).padStart(3, '0')}`,
       customerId: form.customerId,
       lineItems: lineItems.filter(li => li.description),
@@ -50,18 +52,20 @@ export default function Estimates() {
       status: 'draft' as EstimateStatus,
       validUntil: validDate.toISOString().split('T')[0],
       notes: form.notes,
-      createdAt: '2026-06-21',
-    };
-    setEstimates(prev => [...prev, newEst]);
-    setSelectedId(newEst.id);
-    setShowModal(false);
-    setForm({ customerId: '', title: '', description: '', validDays: 30, notes: '' });
-    setLineItems([{ id: 'e1', description: '', quantity: 1, unitPrice: 0, optional: false }]);
-    showToast('success', `Estimate ${newEst.number} created`);
+    });
+    if (result) {
+      setSelectedId(result.id);
+      setShowModal(false);
+      setForm({ customerId: '', title: '', description: '', validDays: 30, notes: '' });
+      setLineItems([{ id: 'e1', description: '', quantity: 1, unitPrice: 0, optional: false }]);
+      showToast('success', `Estimate ${result.number} created`);
+    } else {
+      showToast('error', 'Failed to save estimate.');
+    }
   };
 
-  const handleDelete = (id: string) => {
-    setEstimates(prev => prev.filter(e => e.id !== id));
+  const handleDelete = async (id: string) => {
+    await deleteEstimate(id);
     setSelectedId(null);
     showToast('info', 'Estimate deleted');
   };

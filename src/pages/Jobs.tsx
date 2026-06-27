@@ -19,7 +19,7 @@ const MATERIAL_PACKAGES: Record<string, { name: string; items: { description: st
 };
 
 export default function Jobs() {
-  const { jobs, customers, team, updateJob, setJobs } = useApp();
+  const { jobs, customers, team, updateJob, setJobs, addJob: addJobToDb, deleteJob: deleteJobFromDb } = useApp();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<JobStatus | 'all'>('all');
   const [expandedJob, setExpandedJob] = useState<string | null>('j2');
@@ -68,21 +68,24 @@ export default function Jobs() {
     setEditingJob(null);
   };
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!form.title || !form.customerId) return;
     const customer = customers.find(c => c.id === form.customerId);
     const total = lineItems.reduce((s, li) => s + li.quantity * li.unitPrice, 0);
-    const newJob: Job = {
-      id: `j${Date.now()}`, ...form,
+    const result = await addJobToDb({
+      ...form,
       address: form.address || customer?.address || '', city: form.city || customer?.city || '',
       status: 'scheduled', lineItems: lineItems.filter(li => li.description), totalAmount: total,
-      photos: [], createdAt: new Date().toISOString().split('T')[0],
-    };
-    setJobs(prev => [...prev, newJob]);
-    setShowModal(false);
-    resetForm();
-    setExpandedJob(newJob.id);
-    showToast('success', `Job "${newJob.title}" created`);
+      photos: [],
+    });
+    if (result) {
+      setShowModal(false);
+      resetForm();
+      setExpandedJob(result.id);
+      showToast('success', `Job "${result.title}" created`);
+    } else {
+      showToast('error', 'Failed to save job. Please try again.');
+    }
   };
 
   const handleEdit = (job: Job) => {
@@ -231,7 +234,7 @@ export default function Jobs() {
                     {job.status === 'scheduled' && <button className="btn btn-success" onClick={() => handleStatusChange(job.id, 'in_progress')}><Play size={14} /> Start Job</button>}
                     {job.status === 'in_progress' && (<><button className="btn btn-success" onClick={() => handleStatusChange(job.id, 'completed')}><CheckCircle2 size={14} /> Complete</button><button className="btn btn-warning" onClick={() => handleStatusChange(job.id, 'on_hold')}><Pause size={14} /> Hold</button></>)}
                     {job.status === 'on_hold' && <button className="btn btn-primary" onClick={() => handleStatusChange(job.id, 'in_progress')}><Play size={14} /> Resume</button>}
-                    <button className="btn btn-danger" style={{ marginLeft: 'auto' }} onClick={() => { if (confirm('Delete this job permanently?')) { setJobs(prev => prev.filter(j => j.id !== job.id)); setExpandedJob(null); showToast('info', 'Job deleted'); } }}><Trash2 size={14} /> Delete</button>
+                    <button className="btn btn-danger" style={{ marginLeft: 'auto' }} onClick={async () => { if (confirm('Delete this job permanently?')) { await deleteJobFromDb(job.id); setExpandedJob(null); showToast('info', 'Job deleted'); } }}><Trash2 size={14} /> Delete</button>
                   </div>
                 </div>
               )}

@@ -6,7 +6,7 @@ import { showToast } from '../components/Toast';
 import type { InvoiceStatus, LineItem } from '../types';
 
 export default function Invoices() {
-  const { invoices, customers, setInvoices, jobs } = useApp();
+  const { invoices, customers, setInvoices, jobs, addInvoice: addInvoiceToDb, updateInvoice, deleteInvoice } = useApp();
   const [search, setSearch] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>('inv2');
   const [statusFilter, setStatusFilter] = useState<InvoiceStatus | 'all'>('all');
@@ -34,13 +34,13 @@ export default function Invoices() {
     collected: invoices.reduce((s, i) => s + i.amountPaid, 0),
   };
 
-  const handleRecordPayment = () => {
+  const handleRecordPayment = async () => {
     if (!selected) return;
     const amount = parseFloat(payAmount) || 0;
     if (amount <= 0) return;
-    const newPaid = selected.amountPaid + amount;
+    const newPaid = Math.min(selected.amountPaid + amount, selected.total);
     const newStatus: InvoiceStatus = newPaid >= selected.total ? 'paid' : 'partial';
-    setInvoices(prev => prev.map(i => i.id === selected.id ? { ...i, amountPaid: Math.min(newPaid, i.total), status: newStatus, ...(newStatus === 'paid' ? { paidAt: '2026-06-21' } : {}) } : i));
+    await updateInvoice(selected.id, { amountPaid: newPaid, status: newStatus, ...(newStatus === 'paid' ? { paidAt: new Date().toISOString().split('T')[0] } : {}) });
     setShowPayModal(false);
     setPayAmount('');
     showToast('success', `$${amount.toFixed(2)} payment recorded via ${payMethod.replace('_', ' ')}`);
@@ -55,12 +55,11 @@ export default function Invoices() {
   const updateLineItem = (id: string, field: string, value: string | number) => setLineItems(prev => prev.map(li => li.id === id ? { ...li, [field]: value } : li));
   const removeLineItem = (id: string) => setLineItems(prev => prev.filter(li => li.id !== id));
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!form.customerId) return;
     const subtotal = lineItems.filter(li => li.description).reduce((s, li) => s + li.quantity * li.unitPrice, 0);
     const tax = subtotal * 0.07;
-    const newInv = {
-      id: `inv${Date.now()}`,
+    const result = await addInvoiceToDb({
       number: `INV-${String(invoices.length + 1).padStart(3, '0')}`,
       customerId: form.customerId,
       jobId: form.jobId || undefined,
@@ -69,18 +68,20 @@ export default function Invoices() {
       status: 'draft' as InvoiceStatus,
       dueDate: form.dueDate,
       notes: form.notes,
-      createdAt: '2026-06-21',
-    };
-    setInvoices(prev => [...prev, newInv]);
-    setSelectedId(newInv.id);
-    setShowModal(false);
-    setForm({ customerId: '', jobId: '', dueDays: 30, notes: '' });
-    setLineItems([{ id: 'i1', description: '', quantity: 1, unitPrice: 0 }]);
-    showToast('success', `Invoice ${newInv.number} created`);
+    });
+    if (result) {
+      setSelectedId(result.id);
+      setShowModal(false);
+      setForm({ customerId: '', jobId: '', dueDate: defaultDueDate, notes: '' });
+      setLineItems([{ id: 'i1', description: '', quantity: 1, unitPrice: 0 }]);
+      showToast('success', `Invoice ${result.number} created`);
+    } else {
+      showToast('error', 'Failed to save invoice.');
+    }
   };
 
-  const handleSendInvoice = (id: string) => {
-    setInvoices(prev => prev.map(i => i.id === id ? { ...i, status: 'sent' as InvoiceStatus, sentAt: '2026-06-21' } : i));
+  const handleSendInvoice = async (id: string) => {
+    await updateInvoice(id, { status: 'sent' as InvoiceStatus, sentAt: new Date().toISOString().split('T')[0] });
     showToast('success', 'Invoice sent');
   };
 
@@ -139,7 +140,7 @@ export default function Invoices() {
                   <><button className="btn btn-success" onClick={() => { setPayAmount(String((selected.total - selected.amountPaid).toFixed(2))); setShowPayModal(true); }}><CreditCard size={14} /> Record Payment</button>
                   <button className="btn btn-primary" onClick={handleSendReminder}><Send size={14} /> Send Reminder</button></>
                 )}
-                <button className="btn btn-danger" onClick={() => { setInvoices(prev => prev.filter(i => i.id !== selected.id)); setSelectedId(null); showToast('info', 'Invoice deleted'); }}><Trash2 size={14} /></button>
+                <button className="btn btn-danger" onClick={async () => { await deleteInvoice(selected.id); setSelectedId(null); showToast('info', 'Invoice deleted'); }}><Trash2 size={14} /></button>
               </div>
             </div>
             <div className="document-body">

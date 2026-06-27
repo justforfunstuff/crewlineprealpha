@@ -10,7 +10,7 @@ const EMPTY_CUSTOMER: Omit<Customer, 'id' | 'createdAt' | 'totalSpent' | 'jobCou
 };
 
 export default function Customers() {
-  const { customers, setCustomers, jobs, invoices, messages, addMessage } = useApp();
+  const { customers, setCustomers, jobs, invoices, messages, addMessage, addCustomer, updateCustomer, deleteCustomer } = useApp();
   const [search, setSearch] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>('c1');
   const [sortBy, setSortBy] = useState<'name' | 'spent' | 'recent'>('recent');
@@ -54,22 +54,21 @@ export default function Customers() {
     setFormData(prev => ({ ...prev, tags: prev.tags.filter(t => t !== tag) }));
   };
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!formData.firstName || !formData.lastName) return;
-    const newCustomer: Customer = {
+    const result = await addCustomer({
       ...formData,
-      id: `c${Date.now()}`,
-      createdAt: new Date().toISOString().split('T')[0],
-      totalSpent: 0,
-      jobCount: 0,
-      rating: 5,
+      totalSpent: 0, jobCount: 0, rating: 5,
       lastContactDate: new Date().toISOString().split('T')[0],
-    };
-    setCustomers(prev => [...prev, newCustomer]);
-    setSelectedId(newCustomer.id);
-    setShowAddModal(false);
-    setFormData(EMPTY_CUSTOMER);
-    showToast('success', `Customer ${newCustomer.firstName} ${newCustomer.lastName} added`);
+    });
+    if (result) {
+      setSelectedId(result.id);
+      setShowAddModal(false);
+      setFormData(EMPTY_CUSTOMER);
+      showToast('success', `Customer ${result.firstName} ${result.lastName} added`);
+    } else {
+      showToast('error', 'Failed to save customer. Please try again.');
+    }
   };
 
   const handleOpenEdit = () => {
@@ -78,17 +77,17 @@ export default function Customers() {
     setShowEditModal(true);
   };
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (!selected || !formData.firstName || !formData.lastName) return;
-    setCustomers(prev => prev.map(c => c.id === selected.id ? { ...c, ...formData } : c));
+    await updateCustomer(selected.id, formData);
     setShowEditModal(false);
     showToast('success', `Customer updated`);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!selected) return;
     if (!confirm(`Delete ${selected.firstName} ${selected.lastName}? This cannot be undone.`)) return;
-    setCustomers(prev => prev.filter(c => c.id !== selected.id));
+    await deleteCustomer(selected.id);
     setSelectedId(filtered.find(c => c.id !== selected.id)?.id || null);
     showToast('info', 'Customer deleted');
   };
@@ -194,7 +193,7 @@ export default function Customers() {
               </div>
               <div className="customer-rating">
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <Star key={i} size={16} className={i < selected.rating ? 'star-filled' : 'star-empty'} style={{ cursor: 'pointer' }} onClick={() => setCustomers(prev => prev.map(c => c.id === selected.id ? { ...c, rating: i + 1 } : c))} />
+                  <Star key={i} size={16} className={i < selected.rating ? 'star-filled' : 'star-empty'} style={{ cursor: 'pointer' }} onClick={() => updateCustomer(selected.id, { rating: i + 1 })} />
                 ))}
               </div>
               <div className="detail-actions">
