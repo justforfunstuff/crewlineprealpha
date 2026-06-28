@@ -48,7 +48,7 @@ export default function App() {
           {/* Authenticated routes */}
           <Route element={<RequireAuth />}>
             {/* Business app */}
-            <Route element={<RequireRole roles={['business_owner', 'business_member']} />}>
+            <Route element={<RequireRole roles={['business_owner', 'business_member', 'crewline_admin']} />}>
               <Route element={<AppProvider><Layout /></AppProvider>}>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/schedule" element={<Schedule />} />
@@ -68,7 +68,7 @@ export default function App() {
 
             {/* Admin portal */}
             <Route element={<RequireRole roles={['crewline_admin']} />}>
-              <Route path="/admin" element={<AdminLayout />}>
+              <Route path="/admin" element={<AppProvider><AdminLayout /></AppProvider>}>
                 <Route index element={<AdminDashboard />} />
                 <Route path="businesses" element={<AdminBusinesses />} />
                 <Route path="businesses/new" element={<AdminCreateBusiness />} />
