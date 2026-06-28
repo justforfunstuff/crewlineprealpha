@@ -182,7 +182,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         supabase.from('jobs').select('*').eq('tenant_id', tenantId).order('scheduled_date', { ascending: true }),
         supabase.from('estimates').select('*').eq('tenant_id', tenantId).order('created_at', { ascending: false }),
         supabase.from('invoices').select('*').eq('tenant_id', tenantId).order('created_at', { ascending: false }),
-        supabase.from('profiles').select('*').eq('tenant_id', tenantId),
+        supabase.from('team_members').select('*').eq('tenant_id', tenantId),
         supabase.from('messages').select('*').eq('tenant_id', tenantId).order('created_at', { ascending: true }),
         supabase.from('daily_stats').select('*').eq('tenant_id', tenantId).order('date', { ascending: true }),
       ]);

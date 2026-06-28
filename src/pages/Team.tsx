@@ -45,7 +45,7 @@ export default function Team() {
     if (editMode && selected) {
       const prev = team;
       setTeam(p => p.map(t => t.id === selected.id ? { ...t, ...form } : t));
-      const { error } = await supabase.from('profiles').update({
+      const { error } = await supabase.from('team_members').update({
         full_name: form.name, email: form.email, phone: form.phone,
         team_role: form.role, color: form.color, skills: form.skills,
         availability: form.availability,
@@ -54,18 +54,16 @@ export default function Team() {
       else showToast('success', `${form.name} updated`);
     } else {
       if (!tenant) { showToast('error', 'No business account found.'); return; }
-      const newId = crypto.randomUUID();
-      const { error } = await supabase.from('profiles').insert({
-        id: newId, tenant_id: tenant.id, email: form.email || `${form.name.toLowerCase().replace(/\s+/g, '.')}@team.local`,
-        full_name: form.name, phone: form.phone, role: 'business_member',
-        team_role: form.role, color: form.color, skills: form.skills,
-        availability: form.availability, status: 'available',
-      });
-      if (error) { showToast('error', `Save failed: ${error.message}`); console.error('addTeamMember error:', error); }
+      const { data, error } = await supabase.from('team_members').insert({
+        tenant_id: tenant.id, full_name: form.name, email: form.email,
+        phone: form.phone, team_role: form.role, color: form.color,
+        skills: form.skills, availability: form.availability, status: 'available',
+      }).select().single();
+      if (error || !data) { showToast('error', `Save failed: ${error?.message || 'Unknown error'}`); console.error('addTeamMember error:', error); }
       else {
-        const newMember: TeamMember = { ...form, id: newId, avatar: '', currentLocation: undefined, activeJobId: undefined, status: 'available' };
+        const newMember: TeamMember = { ...form, id: data.id, avatar: '', currentLocation: undefined, activeJobId: undefined, status: 'available' };
         setTeam(p => [...p, newMember]);
-        setSelectedId(newId);
+        setSelectedId(data.id);
         showToast('success', `${form.name} added to team`);
       }
     }
@@ -76,7 +74,7 @@ export default function Team() {
     if (!selected || !confirm(`Remove ${selected.name} from the team?`)) return;
     const prev = team;
     setTeam(p => p.filter(t => t.id !== selected.id));
-    const { error } = await supabase.from('profiles').delete().eq('id', selected.id);
+    const { error } = await supabase.from('team_members').delete().eq('id', selected.id);
     if (error) { setTeam(prev); showToast('error', `Delete failed: ${error.message}`); }
     else { setSelectedId(team.find(t => t.id !== selected.id)?.id || null); showToast('info', 'Team member removed'); }
   };
@@ -88,7 +86,7 @@ export default function Team() {
     const next = order[(order.indexOf(member.status) + 1) % order.length];
     const prev = team;
     setTeam(p => p.map(t => t.id === memberId ? { ...t, status: next } : t));
-    const { error } = await supabase.from('profiles').update({ status: next }).eq('id', memberId);
+    const { error } = await supabase.from('team_members').update({ status: next }).eq('id', memberId);
     if (error) { setTeam(prev); showToast('error', `Save failed: ${error.message}`); }
   };
 
