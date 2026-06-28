@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
+import { supabase } from '../lib/supabase';
 import { Plus, Phone, Mail, Clock, Wrench, Calendar, Edit2, Trash2 } from 'lucide-react';
 import Modal from '../components/Modal';
 import { showToast } from '../components/Toast';
@@ -13,6 +15,7 @@ const defaultAvail: WeeklyAvailability = { monday: { start: '08:00', end: '17:00
 
 export default function Team() {
   const { team, setTeam, jobs } = useApp();
+  const { tenant } = useAuth();
   const [selectedId, setSelectedId] = useState<string | null>('t1');
   const [showModal, setShowModal] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -37,34 +40,56 @@ export default function Team() {
     setShowModal(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.name) return;
     if (editMode && selected) {
-      setTeam(prev => prev.map(t => t.id === selected.id ? { ...t, ...form } : t));
-      showToast('success', `${form.name} updated`);
+      const prev = team;
+      setTeam(p => p.map(t => t.id === selected.id ? { ...t, ...form } : t));
+      const { error } = await supabase.from('profiles').update({
+        full_name: form.name, email: form.email, phone: form.phone,
+        team_role: form.role, color: form.color, skills: form.skills,
+        availability: form.availability,
+      }).eq('id', selected.id);
+      if (error) { setTeam(prev); showToast('error', `Save failed: ${error.message}`); }
+      else showToast('success', `${form.name} updated`);
     } else {
-      const newMember: TeamMember = { ...form, id: `t${Date.now()}`, avatar: '', currentLocation: undefined, activeJobId: undefined, status: 'available' };
-      setTeam(prev => [...prev, newMember]);
-      setSelectedId(newMember.id);
-      showToast('success', `${form.name} added to team`);
+      if (!tenant) { showToast('error', 'No business account found.'); return; }
+      const newId = crypto.randomUUID();
+      const { error } = await supabase.from('profiles').insert({
+        id: newId, tenant_id: tenant.id, email: form.email || `${form.name.toLowerCase().replace(/\s+/g, '.')}@team.local`,
+        full_name: form.name, phone: form.phone, role: 'business_member',
+        team_role: form.role, color: form.color, skills: form.skills,
+        availability: form.availability, status: 'available',
+      });
+      if (error) { showToast('error', `Save failed: ${error.message}`); console.error('addTeamMember error:', error); }
+      else {
+        const newMember: TeamMember = { ...form, id: newId, avatar: '', currentLocation: undefined, activeJobId: undefined, status: 'available' };
+        setTeam(p => [...p, newMember]);
+        setSelectedId(newId);
+        showToast('success', `${form.name} added to team`);
+      }
     }
     setShowModal(false);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!selected || !confirm(`Remove ${selected.name} from the team?`)) return;
-    setTeam(prev => prev.filter(t => t.id !== selected.id));
-    setSelectedId(team.find(t => t.id !== selected.id)?.id || null);
-    showToast('info', 'Team member removed');
+    const prev = team;
+    setTeam(p => p.filter(t => t.id !== selected.id));
+    const { error } = await supabase.from('profiles').delete().eq('id', selected.id);
+    if (error) { setTeam(prev); showToast('error', `Delete failed: ${error.message}`); }
+    else { setSelectedId(team.find(t => t.id !== selected.id)?.id || null); showToast('info', 'Team member removed'); }
   };
 
-  const handleStatusToggle = (memberId: string) => {
-    setTeam(prev => prev.map(t => {
-      if (t.id !== memberId) return t;
-      const order: TeamMember['status'][] = ['available', 'on_job', 'break', 'off_duty'];
-      const next = order[(order.indexOf(t.status) + 1) % order.length];
-      return { ...t, status: next };
-    }));
+  const handleStatusToggle = async (memberId: string) => {
+    const member = team.find(t => t.id === memberId);
+    if (!member) return;
+    const order: TeamMember['status'][] = ['available', 'on_job', 'break', 'off_duty'];
+    const next = order[(order.indexOf(member.status) + 1) % order.length];
+    const prev = team;
+    setTeam(p => p.map(t => t.id === memberId ? { ...t, status: next } : t));
+    const { error } = await supabase.from('profiles').update({ status: next }).eq('id', memberId);
+    if (error) { setTeam(prev); showToast('error', `Save failed: ${error.message}`); }
   };
 
   return (
