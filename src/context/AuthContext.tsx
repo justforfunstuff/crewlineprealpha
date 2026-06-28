@@ -40,16 +40,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { data: userData } = await supabase.auth.getUser();
         const meta = userData?.user?.user_metadata;
         if (meta?.business_name && meta?.business_slug) {
-          const { data: tenantData } = await supabase
+          const newTenantId = crypto.randomUUID();
+          const { error: tenantError } = await supabase
             .from('tenants')
-            .insert({ name: meta.business_name, slug: meta.business_slug, owner_id: userId, email: profileData.email })
-            .select()
-            .single();
+            .insert({ id: newTenantId, name: meta.business_name, slug: meta.business_slug, owner_id: userId, email: profileData.email });
 
-          if (tenantData) {
-            await supabase.from('profiles').update({ tenant_id: tenantData.id }).eq('id', userId);
-            profileData = { ...profileData, tenant_id: tenantData.id };
-            setTenant(tenantData as Tenant);
+          if (!tenantError) {
+            await supabase.from('profiles').update({ tenant_id: newTenantId }).eq('id', userId);
+            profileData = { ...profileData, tenant_id: newTenantId };
+
+            const { data: ten } = await supabase.from('tenants').select('*').eq('id', newTenantId).single();
+            if (ten) setTenant(ten as Tenant);
+          } else {
+            console.error('Tenant creation on login failed:', tenantError);
           }
         }
       }
@@ -113,18 +116,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!data.user) return { error: new Error('Signup failed. Please try again.') };
 
     if (data.session) {
-      const { data: tenantData, error: tenantError } = await supabase
+      const tenantId = crypto.randomUUID();
+      const { error: tenantError } = await supabase
         .from('tenants')
-        .insert({ name: businessName, slug, owner_id: data.user.id, email })
-        .select()
-        .single();
+        .insert({ id: tenantId, name: businessName, slug, owner_id: data.user.id, email });
 
       if (tenantError) return { error: new Error(`Account created, but business setup failed: ${tenantError.message}. Please contact support.`) };
 
-      await supabase
+      const { error: profileError } = await supabase
         .from('profiles')
-        .update({ tenant_id: tenantData.id })
+        .update({ tenant_id: tenantId })
         .eq('id', data.user.id);
+
+      if (profileError) console.error('Profile link failed:', profileError);
     }
 
     return { error: null, needsConfirmation: !data.session };
